@@ -20,6 +20,7 @@ int lex();
 /* Character classes */
 #define LETTER 0
 #define DIGIT 1
+#define LOGICAL_EXP 2
 #define UNKNOWN 99
 /* Token codes */
 
@@ -34,6 +35,8 @@ int lex();
 #define RIGHT_PAREN 26
 
 #define STRING_LIT 27
+#define COMMA_OP 28
+#define COMPARISON_OP 29
 int main()
 {
     char fileName[50];
@@ -85,7 +88,8 @@ int lookup(char ch)
         addChar();
         nextToken = DIV_OP;
         break;
-    case '\'':/*String literal*/
+    case '\'':
+        /*String literal*/
 //        position = ftell(stw_fp);/*For backtracing*/
 
         /*Read through EOF or " */
@@ -107,6 +111,14 @@ int lookup(char ch)
             printf("Unclosed string!\n");
 //            exceptionHandler(EX_STRING_UNCLOSED);
         }
+        break;
+    case ',':
+        addChar();
+        nextToken = COMMA_OP;
+        break;
+    case '=':
+        addChar();
+        nextToken=ASSIGN_OP;
         break;
     default:
         addChar();
@@ -138,6 +150,8 @@ void getChar()
             charClass = LETTER;
         else if (isdigit(nextChar))
             charClass = DIGIT;
+        else if(nextChar=='.')
+            charClass=LOGICAL_EXP;
         else charClass = UNKNOWN;
     }
     else
@@ -187,7 +201,22 @@ int lex()
         lookup(nextChar);
         getChar();
         break;
+    case LOGICAL_EXP:
+        addChar();
+        getChar();
+        while (charClass == LETTER )
+        {
+            addChar();
+            getChar();
+        }
+        getChar();
+        if(charClass=='.')
+        {
+            addChar();
+            nextToken = COMPARISON_OP;
+        }
 
+        break;
 
         /* EOF */
     case EOF:
