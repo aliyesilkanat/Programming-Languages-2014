@@ -1,5 +1,6 @@
 # depslib dependency file v1.0
-1397987912 source:c:\users\smsng\codeblock\programming-languages-2014\lexical analyzer\main.c
+1398191965 source:c:\users\smsng\codeblock\programming-languages-2014\lexical analyzer\main.c
 	<stdio.h>
 	<ctype.h>
+	<string.h>
 

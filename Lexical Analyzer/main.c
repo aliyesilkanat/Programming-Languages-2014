@@ -1,6 +1,9 @@
 #include <stdio.h>
 #include <ctype.h>
+#include <string.h>
 
+#define KEYWORD_LIST_SIZE 39
+char* keywordList[]= {"ASSIGN","BACKSPACE","BLOCK DATA","CALL","CLOSE","COMMON","CONTINUE","DATA","DIMENSION","DO","ELSE","ELSE IF","END","ENDFILE","ENDIF","ENTRY","EQUIVALENCE","EXTERNAL","FORMAT","FUNCTION","GOTO","IF","IMPLICIT","INQUIRE","INTRINSIC","OPEN","PARAMETER","PAUSE","PRINT","PROGRAM","READ","RETURN","REWIND","REWRITE","SAVE","STOP","SUBROUTINE","THEN","WRITE"};
 /* Global declarations */
 /* Variables */
 int charClass;
@@ -10,6 +13,7 @@ int lexLen;
 int token;
 int nextToken;
 FILE *in_fp, *fopen();
+//int newLineFlag;
 
 /* Function declarations */
 void addChar();
@@ -26,6 +30,7 @@ int lex();
 
 #define INT_LIT 10
 #define IDENT 11
+#define KEYWORD 12
 #define ASSIGN_OP 20
 #define ADD_OP 21
 #define SUB_OP 22
@@ -49,6 +54,7 @@ int main()
     else
     {
         getChar();
+//        newLineFlag=1;
         do
         {
             lex();
@@ -144,6 +150,7 @@ void addChar()
 input and determine its character class */
 void getChar()
 {
+//    newLineFlag=0;
     if ((nextChar = getc(in_fp)) != EOF)
     {
         if (isalpha(nextChar))
@@ -156,12 +163,24 @@ void getChar()
     }
     else
         charClass = EOF;
+//    while(nextChar==' ')
+//    {
+//        nextChar=getc(in_fp);
+//        if(nextChar==EOF)
+//            break;
+//    }
+////    if(newLineFlag==1)
+////        newLineFlag=0;
+//    if(nextChar=='\n')
+//        newLineFlag=1;
 }
 /*****************************************************/
 /* getNonBlank - a function to call getChar until it
 returns a non-whitespace character */
 void getNonBlank()
 {
+//    if(nextChar=='n')
+//        newLineFlag=1;
     while (isspace(nextChar))
         getChar();
 }
@@ -183,7 +202,18 @@ int lex()
             addChar();
             getChar();
         }
-        nextToken = IDENT;
+
+        int i,keywordFlag=0;
+        for(i=0; i<KEYWORD_LIST_SIZE; i++)
+            if(strcasecmp(keywordList[i],lexeme)==0)
+            {
+                keywordFlag=1;
+                break;
+            }
+        if(keywordFlag==1)
+            nextToken = KEYWORD;
+        else
+            nextToken = IDENT;
         break;
         /* Parse integer literals */
     case DIGIT:
@@ -227,7 +257,18 @@ int lex()
         lexeme[3] = 0;
         break;
     } /* End of switch */
-    printf("Next token is: %d, Next lexeme is %s\n",
-           nextToken, lexeme);
+//    if(newLineFlag!=1 || strcasecmp("C",lexeme)!=0)
+
+        printf("Next token is: %d, Next lexeme is %s\n",
+               nextToken, lexeme);
+//    if(newLineFlag==1 && strcasecmp("C",lexeme)==0)
+//    {
+//
+//
+//        while(nextChar!='\n')
+//
+//        nextChar=getc(in_fp);
+//                 nextToken=STRING_LIT;
+//    }
     return nextToken;
 } /* End of function lex */
