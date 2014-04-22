@@ -8,11 +8,14 @@ char* keywordList[]= {"ASSIGN","BACKSPACE","BLOCK DATA","CALL","CLOSE","COMMON",
 /* Variables */
 int charClass;
 char lexeme [100];
-char nextChar;
+char nextChar='\n';
 int lexLen;
 int token;
 int nextToken;
 FILE *in_fp, *fopen();
+char previousChar='\n';
+
+int commentFlag=0;
 //int newLineFlag;
 
 /* Function declarations */
@@ -150,6 +153,10 @@ void addChar()
 input and determine its character class */
 void getChar()
 {
+    commentFlag=0;
+    if(previousChar=='\n'&& nextChar=='C')
+        commentFlag=1;
+    previousChar=nextChar;
 //    newLineFlag=0;
     if ((nextChar = getc(in_fp)) != EOF)
     {
@@ -257,11 +264,19 @@ int lex()
         lexeme[3] = 0;
         break;
     } /* End of switch */
-//    if(newLineFlag!=1 || strcasecmp("C",lexeme)!=0)
+//    if( =='\n'|| strcasecmp("C",lexeme)!=0)
+if(commentFlag==0)
+    printf("Next token is: %d, Next lexeme is %s\n",
+           nextToken, lexeme);
+           if(commentFlag==1)
+           {
+               while(nextChar!='\n')
 
-        printf("Next token is: %d, Next lexeme is %s\n",
-               nextToken, lexeme);
-//    if(newLineFlag==1 && strcasecmp("C",lexeme)==0)
+        nextChar=getc(in_fp);
+                 nextToken=STRING_LIT;
+           }
+
+//    if(previousChar=='\n' && strcasecmp("C",lexeme)==0)
 //    {
 //
 //
