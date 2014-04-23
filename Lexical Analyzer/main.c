@@ -13,6 +13,7 @@ int lexLen;
 int token;
 int nextToken;
 FILE *in_fp, *fopen();
+FILE *tkn_fp;
 char previousChar='\n';
 
 int commentFlag=0;
@@ -42,9 +43,19 @@ int lex();
 #define LEFT_PAREN 25
 #define RIGHT_PAREN 26
 
+
 #define STRING_LIT 27
 #define COMMA_OP 28
 #define COMPARISON_OP 29
+
+#define GT_OP 30
+#define LT_OP 31
+#define GE_OP 32
+#define LE_OP 33
+#define EQ_OP 34
+#define NE_OP 35
+
+#define POW_OP 36
 int main()
 {
     char fileName[50];
@@ -56,6 +67,10 @@ int main()
         printf("ERROR - cannot open %s \n",fileName);
     else
     {
+
+        char *x = strrchr(fileName,'.');
+        strcpy(x,".lex");
+        tkn_fp=fopen(fileName,"w+");
         getChar();
 //        newLineFlag=1;
         do
@@ -237,6 +252,12 @@ int lex()
     case UNKNOWN:
         lookup(nextChar);
         getChar();
+        if(previousChar=='*' && nextChar=='*')
+        {
+            addChar();
+            nextToken=POW_OP;
+            getChar();
+        }
         break;
     case LOGICAL_EXP:
         addChar();
@@ -246,11 +267,27 @@ int lex()
             addChar();
             getChar();
         }
-        getChar();
-        if(charClass=='.')
+        if(nextChar=='.')
         {
+//             nextToken = COMPARISON_OP;
             addChar();
-            nextToken = COMPARISON_OP;
+
+            getChar();
+            if(strcasecmp(lexeme,".gt.")==0)
+                nextToken=GT_OP;
+            else if(strcasecmp(lexeme,".lt.")==0)
+                nextToken=LT_OP;
+            else if(strcasecmp(lexeme,".ge.")==0)
+                nextToken=GE_OP;
+            else if(strcasecmp(lexeme,".le.")==0)
+                nextToken=LE_OP;
+            else if(strcasecmp(lexeme,".eq.")==0)
+                nextToken=EQ_OP;
+            else if(strcasecmp(lexeme,".ne.")==0)
+                nextToken=NE_OP;
+
+
+
         }
 
         break;
@@ -265,16 +302,19 @@ int lex()
         break;
     } /* End of switch */
 //    if( =='\n'|| strcasecmp("C",lexeme)!=0)
-if(commentFlag==0)
-    printf("Next token is: %d, Next lexeme is %s\n",
-           nextToken, lexeme);
-           if(commentFlag==1)
-           {
-               while(nextChar!='\n')
+    if(commentFlag==0)
+    {
+        printf("Next token is: %d, Next lexeme is %s\n",
+               nextToken, lexeme);
+        fprintf(tkn_fp,"(%d,%s)",nextToken,lexeme);
+    }
+    if(commentFlag==1)
+    {
+        while(nextChar!='\n')
 
-        nextChar=getc(in_fp);
-                 nextToken=STRING_LIT;
-           }
+            nextChar=getc(in_fp);
+        nextToken=STRING_LIT;
+    }
 
 //    if(previousChar=='\n' && strcasecmp("C",lexeme)==0)
 //    {
