@@ -13,6 +13,7 @@ int lexLen;
 int token;
 int nextToken;
 FILE *in_fp, *fopen();
+FILE *tkn_fp;
 char previousChar='\n';
 
 int commentFlag=0;
@@ -56,6 +57,10 @@ int main()
         printf("ERROR - cannot open %s \n",fileName);
     else
     {
+
+        char *x = strrchr(fileName,'.');
+        strcpy(x,".lex");
+        tkn_fp=fopen(fileName,"w+");
         getChar();
 //        newLineFlag=1;
         do
@@ -265,16 +270,19 @@ int lex()
         break;
     } /* End of switch */
 //    if( =='\n'|| strcasecmp("C",lexeme)!=0)
-if(commentFlag==0)
-    printf("Next token is: %d, Next lexeme is %s\n",
-           nextToken, lexeme);
-           if(commentFlag==1)
-           {
-               while(nextChar!='\n')
+    if(commentFlag==0)
+    {
+        printf("Next token is: %d, Next lexeme is %s\n",
+               nextToken, lexeme);
+        fprintf(tkn_fp,"(%d,%s)",nextToken,lexeme);
+    }
+    if(commentFlag==1)
+    {
+        while(nextChar!='\n')
 
-        nextChar=getc(in_fp);
-                 nextToken=STRING_LIT;
-           }
+            nextChar=getc(in_fp);
+        nextToken=STRING_LIT;
+    }
 
 //    if(previousChar=='\n' && strcasecmp("C",lexeme)==0)
 //    {
