@@ -46,6 +46,14 @@ int lex();
 #define STRING_LIT 27
 #define COMMA_OP 28
 #define COMPARISON_OP 29
+
+#define GT_OP 30
+#define LT_OP 31
+#define GE_OP 32
+#define LE_OP 33
+#define EQ_OP 34
+#define NE_OP 35
+
 int main()
 {
     char fileName[50];
@@ -251,11 +259,27 @@ int lex()
             addChar();
             getChar();
         }
-        getChar();
-        if(charClass=='.')
+        if(nextChar=='.')
         {
+//             nextToken = COMPARISON_OP;
             addChar();
-            nextToken = COMPARISON_OP;
+
+            getChar();
+            if(strcasecmp(lexeme,".gt.")==0)
+                nextToken=GT_OP;
+            else if(strcasecmp(lexeme,".lt.")==0)
+                nextToken=LT_OP;
+            else if(strcasecmp(lexeme,".ge.")==0)
+                nextToken=GE_OP;
+            else if(strcasecmp(lexeme,".le.")==0)
+                nextToken=LE_OP;
+            else if(strcasecmp(lexeme,".eq.")==0)
+                nextToken=EQ_OP;
+            else if(strcasecmp(lexeme,".ne.")==0)
+                nextToken=NE_OP;
+
+
+
         }
 
         break;
