@@ -43,6 +43,7 @@ int lex();
 #define LEFT_PAREN 25
 #define RIGHT_PAREN 26
 
+
 #define STRING_LIT 27
 #define COMMA_OP 28
 #define COMPARISON_OP 29
@@ -54,6 +55,7 @@ int lex();
 #define EQ_OP 34
 #define NE_OP 35
 
+#define POW_OP 36
 int main()
 {
     char fileName[50];
@@ -250,6 +252,12 @@ int lex()
     case UNKNOWN:
         lookup(nextChar);
         getChar();
+        if(previousChar=='*' && nextChar=='*')
+        {
+            addChar();
+            nextToken=POW_OP;
+            getChar();
+        }
         break;
     case LOGICAL_EXP:
         addChar();
