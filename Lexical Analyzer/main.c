@@ -38,8 +38,8 @@ int lex();
 #define ASSIGN_OP 20
 #define ADD_OP 21
 #define SUB_OP 22
-#define MULT_OP 23
-#define DIV_OP 24
+#define ASTERISK_OP 23
+#define SLASH_OP 24
 #define LEFT_PAREN 25
 #define RIGHT_PAREN 26
 
@@ -56,6 +56,8 @@ int lex();
 #define NE_OP 35
 
 #define POW_OP 36
+#define REAL_LIT 37
+
 int main()
 {
     char fileName[50];
@@ -106,11 +108,11 @@ int lookup(char ch)
         break;
     case '*':
         addChar();
-        nextToken = MULT_OP;
+        nextToken = ASTERISK_OP;
         break;
     case '/':
         addChar();
-        nextToken = DIV_OP;
+        nextToken = SLASH_OP;
         break;
     case '\'':
         /*String literal*/
@@ -241,12 +243,20 @@ int lex()
     case DIGIT:
         addChar();
         getChar();
-        while (charClass == DIGIT)
+                nextToken = INT_LIT;
+        while ((charClass == DIGIT ||nextChar=='D')||((nextChar=='.' || nextChar=='E' )||(nextChar=='F' || nextChar=='G')))
         {
+//             if((nextChar=='.' || nextChar=='E' )||(nextChar=='F' || nextChar=='G'))
+//            {
+//
+//                nextToken=REAL_LIT;
+//            }
             addChar();
             getChar();
+
+
         }
-        nextToken = INT_LIT;
+
         break;
         /* Parentheses and operators */
     case UNKNOWN:
