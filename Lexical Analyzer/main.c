@@ -114,30 +114,30 @@ int lookup(char ch)
         addChar();
         nextToken = SLASH_OP;
         break;
-    case '\'':
-        /*String literal*/
-//        position = ftell(stw_fp);/*For backtracing*/
-
-        /*Read through EOF or " */
-        addChar();
-        do
-        {
-            getChar();
-            addChar();
-        }
-        while(nextChar!= EOF && nextChar != '\'');
-
-        if (nextChar == '\'')/*No error Return to the startting point*/
-        {
-//            fseek(stw_fp,position-1,SEEK_SET);
-            nextToken = STRING_LIT;
-        }
-        else if(nextChar == EOF)/*Unclosed comment exception*/
-        {
-            printf("Unclosed string!\n");
-//            exceptionHandler(EX_STRING_UNCLOSED);
-        }
-        break;
+//    case '\'':
+//        /*String literal*/
+////        position = ftell(stw_fp);/*For backtracing*/
+//
+//        /*Read through EOF or " */
+//        addChar();
+//        do
+//        {
+//            getChar();
+//            addChar();
+//        }
+//        while(nextChar!= EOF && nextChar != '\'');
+//
+//        if (nextChar == '\'')/*No error Return to the startting point*/
+//        {
+////            fseek(stw_fp,position-1,SEEK_SET);
+//            nextToken = STRING_LIT;
+//        }
+//        else if(nextChar == EOF)/*Unclosed comment exception*/
+//        {
+//            printf("Unclosed string!\n");
+////            exceptionHandler(EX_STRING_UNCLOSED);
+//        }
+//        break;
     case ',':
         addChar();
         nextToken = COMMA_OP;
