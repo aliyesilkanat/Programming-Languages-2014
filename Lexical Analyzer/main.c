@@ -73,11 +73,14 @@ int main()
         char *x = strrchr(fileName,'.');
         strcpy(x,".lex");
         tkn_fp=fopen(fileName,"w+");
+        commentFlag=0;
         getChar();
+
 //        newLineFlag=1;
         do
         {
             lex();
+            commentFlag=0;
         }
         while (nextToken != EOF);
     }
@@ -170,8 +173,8 @@ void addChar()
 input and determine its character class */
 void getChar()
 {
-    commentFlag=0;
-    if(previousChar=='\n'&& nextChar=='C')
+
+    if((previousChar=='\n'&& nextChar=='C')&& commentFlag==0)
         commentFlag=1;
     previousChar=nextChar;
 //    newLineFlag=0;
