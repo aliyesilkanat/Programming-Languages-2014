@@ -3,7 +3,7 @@
       EXTERNAL SUB1
       COMMON /GLOBALS/ N
       X = 0
-      PRINT *, 'Enter number of repeats'
+      PRINT *, 'Enter number of repeats
       READ (*,*) N
       CALL SUB1(X,SUB1)
       END

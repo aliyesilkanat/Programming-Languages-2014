@@ -17,6 +17,8 @@ FILE *tkn_fp;
 char previousChar='\n';
 
 int commentFlag=0;
+int line=1;
+int exception=0;
 //int newLineFlag;
 
 /* Function declarations */
@@ -24,6 +26,7 @@ void addChar();
 void getChar();
 void getNonBlank();
 int lex();
+void exceptionHandler(int);
 
 /* Character classes */
 #define LETTER 0
@@ -58,6 +61,16 @@ int lex();
 #define POW_OP 36
 #define REAL_LIT 37
 
+#define NOT_OP 38
+#define AND_OP 39
+#define OR_OP 40
+#define EQV_OP 41
+#define NEQV_OP 42
+
+#define EXC_STRING_UNCLOSED 1000
+#define EXC_UNDEFINED_CHAR 1001
+#define EXC_LONG_ID 1002
+#define EXC_IMPROPER_ID 1003
 int main()
 {
     char fileName[50];
@@ -74,13 +87,13 @@ int main()
         strcpy(x,".lex");
         tkn_fp=fopen(fileName,"w+");
         commentFlag=0;
+        exception=0;
         getChar();
-
-//        newLineFlag=1;
         do
         {
             lex();
             commentFlag=0;
+            exception=0;
         }
         while (nextToken != EOF);
     }
@@ -128,17 +141,17 @@ int lookup(char ch)
             getChar();
             addChar();
         }
-        while(nextChar!= EOF && nextChar != '\'');
+        while((nextChar!= EOF && nextChar != '\'')&& nextChar!='\n');
 
         if (nextChar == '\'')/*No error Return to the startting point*/
         {
 //            fseek(stw_fp,position-1,SEEK_SET);
             nextToken = STRING_LIT;
         }
-        else if(nextChar == EOF)/*Unclosed comment exception*/
+        else /*Unclosed comment exception*/
         {
-            printf("Unclosed string!\n");
-//            exceptionHandler(EX_STRING_UNCLOSED);
+//            printf("Unclosed string!\n");
+            exceptionHandler(EXC_STRING_UNCLOSED);
         }
         break;
     case ',':
@@ -190,6 +203,8 @@ void getChar()
     }
     else
         charClass = EOF;
+    if(nextChar=='\n')
+        line++;
 //    while(nextChar==' ')
 //    {
 //        nextChar=getc(in_fp);
@@ -246,14 +261,14 @@ int lex()
     case DIGIT:
         addChar();
         getChar();
-                nextToken = INT_LIT;
+        nextToken = INT_LIT;
         while ((charClass == DIGIT ||nextChar=='D')||((nextChar=='.' || nextChar=='E' )||(nextChar=='F' || nextChar=='G')))
         {
-//             if((nextChar=='.' || nextChar=='E' )||(nextChar=='F' || nextChar=='G'))
-//            {
-//
-//                nextToken=REAL_LIT;
-//            }
+            if(((nextChar=='.' || nextChar=='E' )||(nextChar=='F' || nextChar=='G'))||nextChar=='D')
+            {
+
+                nextToken=REAL_LIT;
+            }
             addChar();
             getChar();
 
@@ -299,6 +314,18 @@ int lex()
             else if(strcasecmp(lexeme,".ne.")==0)
                 nextToken=NE_OP;
 
+            else   if(strcasecmp(lexeme,".not.")==0)
+                nextToken=NOT_OP;
+            else if(strcasecmp(lexeme,".and.")==0)
+                nextToken=AND_OP;
+            else if(strcasecmp(lexeme,".or.")==0)
+                nextToken=OR_OP;
+            else if(strcasecmp(lexeme,".eqv.")==0)
+                nextToken=EQV_OP;
+            else if(strcasecmp(lexeme,".neqv.")==0)
+                nextToken=NEQV_OP;
+
+
 
 
         }
@@ -315,7 +342,7 @@ int lex()
         break;
     } /* End of switch */
 //    if( =='\n'|| strcasecmp("C",lexeme)!=0)
-    if(commentFlag==0)
+    if(commentFlag==0&&exception==0)
     {
         printf("Next token is: %d, Next lexeme is %s\n",
                nextToken, lexeme);
@@ -329,14 +356,17 @@ int lex()
         nextToken=STRING_LIT;
     }
 
-//    if(previousChar=='\n' && strcasecmp("C",lexeme)==0)
-//    {
-//
-//
-//        while(nextChar!='\n')
-//
-//        nextChar=getc(in_fp);
-//                 nextToken=STRING_LIT;
-//    }
     return nextToken;
 } /* End of function lex */
+void exceptionHandler(int exceptionCode)
+{
+    printf("ERROR! ");
+    exception=1;
+    switch(exceptionCode)
+    {
+    case EXC_STRING_UNCLOSED:
+        printf("String not closed in line: %d\n",line-1);
+        break;
+
+    }
+}
