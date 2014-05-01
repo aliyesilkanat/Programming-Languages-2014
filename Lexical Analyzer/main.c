@@ -19,6 +19,7 @@ char previousChar='\n';
 int commentFlag=0;
 int line=1;
 int exception=0;
+int errors=0;
 //int newLineFlag;
 
 /* Function declarations */
@@ -71,6 +72,7 @@ void exceptionHandler(int);
 #define EXC_UNDEFINED_CHAR 1001
 #define EXC_LONG_ID 1002
 #define EXC_IMPROPER_ID 1003
+#define EXC_IMPROPER_REAL_TYPE 1004
 int main()
 {
     char fileName[50];
@@ -96,6 +98,8 @@ int main()
             exception=0;
         }
         while (nextToken != EOF);
+        if(errors>0)
+            printf("There are %d errors in source code, .lex file not created.\n",errors);
     }
     return 0;
 }
@@ -162,9 +166,12 @@ int lookup(char ch)
         addChar();
         nextToken=ASSIGN_OP;
         break;
-    default:
+    case EOF:
         addChar();
-        nextToken = EOF;
+        nextToken=EOF;
+        break;
+    default:
+        exceptionHandler(EXC_UNDEFINED_CHAR);
         break;
     }
     return nextToken;
@@ -173,13 +180,13 @@ int lookup(char ch)
 /* addChar - a function to add nextChar to lexeme */
 void addChar()
 {
-    if (lexLen <= 98)
+    if (lexLen <= 31)
     {
         lexeme[lexLen++] = nextChar;
         lexeme[lexLen] = 0;
     }
-    else
-        printf("Error - lexeme is too long \n");
+//    else
+//        exceptionHandler(EXC_LONG_ID);
 }
 /*****************************************************/
 /* getChar - a function to get the next character of
@@ -239,7 +246,7 @@ int lex()
     case LETTER:
         addChar();
         getChar();
-        while (charClass == LETTER || charClass == DIGIT)
+        while ((charClass == LETTER || charClass == DIGIT)|| nextChar=='_')
         {
             addChar();
             getChar();
@@ -262,19 +269,44 @@ int lex()
         addChar();
         getChar();
         nextToken = INT_LIT;
-        while ((charClass == DIGIT ||nextChar=='D')||((nextChar=='.' || nextChar=='E' )||(nextChar=='F' || nextChar=='G')))
+        int dotFlag=0;
+        while (charClass==DIGIT)
         {
-            if(((nextChar=='.' || nextChar=='E' )||(nextChar=='F' || nextChar=='G'))||nextChar=='D')
-            {
-
-                nextToken=REAL_LIT;
-            }
             addChar();
             getChar();
-
-
+        }
+        if(charClass==LETTER)
+        {
+            exceptionHandler(EXC_IMPROPER_ID);
+            getChar();
+            break;
+        }
+        if(nextChar=='.')
+        {
+            nextToken=REAL_LIT;
+            addChar();
+            getChar();
         }
 
+
+        while ((charClass == DIGIT ||nextChar=='D')||( nextChar=='E' ||(nextChar=='F' || nextChar=='G')))
+        {
+//            if(nextChar=='.'&&dotFlag==0)
+//                dotFlag=1;
+//            if(( nextChar=='E' ||nextChar=='F') ||( nextChar=='G'||nextChar=='D'))
+//            {
+//                if(dotFlag==1)
+//                    nextToken=REAL_LIT;
+//                else exceptionHandler(EXC_IMPROPER_REAL_TYPE);
+//            }
+//            else exceptionHandler(EXC_IMPROPER_REAL_TYPE);
+//            if(isalpha(nextChar)&&dotFlag==0)
+//                exceptionHandler(EXC_IMPROPER_ID);
+//            addChar();
+//            getChar();
+            addChar();
+            getChar();
+        }
         break;
         /* Parentheses and operators */
     case UNKNOWN:
@@ -313,8 +345,7 @@ int lex()
                 nextToken=EQ_OP;
             else if(strcasecmp(lexeme,".ne.")==0)
                 nextToken=NE_OP;
-
-            else   if(strcasecmp(lexeme,".not.")==0)
+            else if(strcasecmp(lexeme,".not.")==0)
                 nextToken=NOT_OP;
             else if(strcasecmp(lexeme,".and.")==0)
                 nextToken=AND_OP;
@@ -324,14 +355,8 @@ int lex()
                 nextToken=EQV_OP;
             else if(strcasecmp(lexeme,".neqv.")==0)
                 nextToken=NEQV_OP;
-
-
-
-
         }
-
         break;
-
         /* EOF */
     case EOF:
         nextToken = EOF;
@@ -342,11 +367,13 @@ int lex()
         break;
     } /* End of switch */
 //    if( =='\n'|| strcasecmp("C",lexeme)!=0)
+     if(lexLen>31)
+     exceptionHandler(EXC_LONG_ID);
     if(commentFlag==0&&exception==0)
     {
         printf("Next token is: %d, Next lexeme is %s\n",
                nextToken, lexeme);
-        fprintf(tkn_fp,"(%d,%s)",nextToken,lexeme);
+        fprintf(tkn_fp,"(%d,%s)\n",nextToken,lexeme);
     }
     if(commentFlag==1)
     {
@@ -360,6 +387,7 @@ int lex()
 } /* End of function lex */
 void exceptionHandler(int exceptionCode)
 {
+    errors++;
     printf("ERROR! ");
     exception=1;
     switch(exceptionCode)
@@ -367,6 +395,17 @@ void exceptionHandler(int exceptionCode)
     case EXC_STRING_UNCLOSED:
         printf("String not closed in line: %d\n",line-1);
         break;
-
+    case EXC_IMPROPER_ID:
+        printf("Identiifer started with digit in line: %d\n",line-1);
+        break;
+    case EXC_IMPROPER_REAL_TYPE:
+        printf("Real type defined improperly in line: %d\n",line-1);
+        break;
+    case EXC_LONG_ID:
+        printf("Identifier has more character than 31 in line: %d\n",line-1);
+        break;
+    case EXC_UNDEFINED_CHAR:
+        printf("Undefined character in line: %d\n",line-1);
+        break;
     }
 }

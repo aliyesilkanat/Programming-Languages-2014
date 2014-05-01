@@ -17,4 +17,3 @@ C
    2  CONTINUE
       STOP
       END
-C SEX 
