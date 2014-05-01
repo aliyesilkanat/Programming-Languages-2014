@@ -73,6 +73,7 @@ void exceptionHandler(int);
 #define EXC_LONG_ID 1002
 #define EXC_IMPROPER_ID 1003
 #define EXC_IMPROPER_REAL_TYPE 1004
+#define EXC_UNDEFINED_COMP_OP 1005
 int main()
 {
     char fileName[50];
@@ -355,6 +356,7 @@ int lex()
                 nextToken=EQV_OP;
             else if(strcasecmp(lexeme,".neqv.")==0)
                 nextToken=NEQV_OP;
+            else exceptionHandler(EXC_UNDEFINED_COMP_OP);
         }
         break;
         /* EOF */
@@ -367,8 +369,8 @@ int lex()
         break;
     } /* End of switch */
 //    if( =='\n'|| strcasecmp("C",lexeme)!=0)
-     if(lexLen>31)
-     exceptionHandler(EXC_LONG_ID);
+    if(lexLen>31)
+    exceptionHandler(EXC_LONG_ID);
     if(commentFlag==0&&exception==0)
     {
         printf("Next token is: %d, Next lexeme is %s\n",
@@ -406,6 +408,9 @@ void exceptionHandler(int exceptionCode)
         break;
     case EXC_UNDEFINED_CHAR:
         printf("Undefined character in line: %d\n",line-1);
+        break;
+    case EXC_UNDEFINED_COMP_OP:
+        printf("Undefined compresion operator in line: %d\n",line-1);
         break;
     }
 }
