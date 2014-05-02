@@ -1,4 +1,10 @@
-
+C
+C NUMERICAL MATHEMATICS AND COMPUTING, CHENEY/KINCAID, (c) 1985
+C
+C FILE: xsinx.f
+C
+C EXAMPLE OF PROGRAMMING F(X) = X - SIN(X) CAREFULLY (F)
+C
       DOUBLE PRECISION DX,DY,DZ       
       DX = 1.0D0/15.0D0     
       DY = DSIN(DX) 
@@ -15,6 +21,7 @@
       PRINT *,X,Y 
       STOP
       END 
+  
       FUNCTION F(X) 
       IF(ABS(X) .GE. 1.9) THEN
         F = X - SIN(X)
@@ -28,4 +35,4 @@
       END IF      
       RETURN
       END 
-C AAAAAAA
+

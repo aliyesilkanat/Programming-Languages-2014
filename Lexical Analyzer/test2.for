@@ -1,3 +1,4 @@
+
       PROGRAM MAIN
       INTEGER N, X
       EXTERNAL SUB1
@@ -7,6 +8,7 @@
       READ (*,*) N
       CALL SUB1(X,SUB1)
       END
+
       SUBROUTINE SUB1(X,DUMSUB)
       INTEGER N, X, Y
       EXTERNAL DUMSUB
