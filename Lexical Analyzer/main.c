@@ -2,7 +2,7 @@
 #include <ctype.h>
 #include <string.h>
 
-#define KEYWORD_LIST_SIZE 39
+#define KEYWORD_LIST_SIZE 40
 char* keywordList[]= {"ASSIGN","BACKSPACE","BLOCK DATA","CALL","CLOSE","COMMON","CONTINUE",
                       "DATA","DIMENSION","DO","ELSE","ELSE IF","END","ENDFILE","END IF","ENTRY","EQUIVALENCE",
                       "EXTERNAL","FORMAT","FUNCTION","GOTO","IF","IMPLICIT","INQUIRE","INTRINSIC","OPEN","PARAMETER",
