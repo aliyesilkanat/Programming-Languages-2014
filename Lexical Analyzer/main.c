@@ -408,9 +408,9 @@ int lex()
     {
         if(endFlag==1 && keywordFlag==1)
         {
-              printf("Next token is: %d, Next lexeme is %s\n",
-               nextToken, lexeme);
-        fprintf(tkn_fp,"(%d,%s)\n",nextToken,lexeme);
+            printf("Next token is: %d, Next lexeme is %s\n",
+                   nextToken, lexeme);
+            fprintf(tkn_fp,"(%d,%s)\n",nextToken,lexeme);
         }
 
 
@@ -419,24 +419,35 @@ int lex()
             strcpy(lexeme,"END");
             nextToken=KEYWORD;
 
-             printf("Next token is: %d, Next lexeme is %s\n",
-               nextToken, lexeme);
-        fprintf(tkn_fp,"(%d,%s)\n",nextToken,lexeme);
-        fseek(in_fp,positionFileEnd,SEEK_SET);
+            printf("Next token is: %d, Next lexeme is %s\n",
+                   nextToken, lexeme);
+            fprintf(tkn_fp,"(%d,%s)\n",nextToken,lexeme);
+            fseek(in_fp,positionFileEnd,SEEK_SET);
 
         }
-        else if(endFlag==0){
-          printf("Next token is: %d, Next lexeme is %s\n",
-               nextToken, lexeme);
-        fprintf(tkn_fp,"(%d,%s)\n",nextToken,lexeme);
+        else if(endFlag==0)
+        {
+            printf("Next token is: %d, Next lexeme is %s\n",
+                   nextToken, lexeme);
+            fprintf(tkn_fp,"(%d,%s)\n",nextToken,lexeme);
         }
     }
     if(commentFlag==1)
     {
-        while(nextChar!='\n')
+        while(nextChar!='\n'&&nextChar!=EOF)
 
             nextChar=getc(in_fp);
-        nextToken=STRING_LIT;
+        if(nextChar==EOF)
+        {
+            nextToken = EOF;
+            lexeme[0] = 'E';
+            lexeme[1] = 'O';
+            lexeme[2] = 'F';
+            lexeme[3] = 0;
+            printf("Next token is: %d, Next lexeme is %s\n",
+                   nextToken, lexeme);
+            fprintf(tkn_fp,"(%d,%s)\n",nextToken,lexeme);
+        }
     }
 
     return nextToken;
