@@ -3,7 +3,11 @@
 #include <string.h>
 
 #define KEYWORD_LIST_SIZE 39
-char* keywordList[]= {"ASSIGN","BACKSPACE","BLOCK DATA","CALL","CLOSE","COMMON","CONTINUE","DATA","DIMENSION","DO","ELSE","ELSE IF","END","ENDFILE","ENDIF","ENTRY","EQUIVALENCE","EXTERNAL","FORMAT","FUNCTION","GOTO","IF","IMPLICIT","INQUIRE","INTRINSIC","OPEN","PARAMETER","PAUSE","PRINT","PROGRAM","READ","RETURN","REWIND","REWRITE","SAVE","STOP","SUBROUTINE","THEN","WRITE"};
+char* keywordList[]= {"ASSIGN","BACKSPACE","BLOCK DATA","CALL","CLOSE","COMMON","CONTINUE",
+                      "DATA","DIMENSION","DO","ELSE","ELSE IF","END","ENDFILE","END IF","ENTRY","EQUIVALENCE",
+                      "EXTERNAL","FORMAT","FUNCTION","GOTO","IF","IMPLICIT","INQUIRE","INTRINSIC","OPEN","PARAMETER",
+                      "PAUSE","PRINT","PROGRAM","READ","RETURN","REWIND","REWRITE","SAVE","STOP","SUBROUTINE","THEN","WRITE","END DO"
+                     };
 /* Global declarations */
 /* Variables */
 int charClass;
@@ -20,7 +24,10 @@ int commentFlag=0;
 int line=1;
 int exception=0;
 int errors=0;
+int endFlag=0;
 //int newLineFlag;
+int positionFileEnd;
+int keywordFlag=0;
 
 /* Function declarations */
 void addChar();
@@ -102,6 +109,7 @@ int main()
         if(errors>0)
             printf("There are %d errors in source code, .lex file not created.\n",errors);
     }
+    getchar();
     return 0;
 }
 /*****************************************************/
@@ -252,8 +260,33 @@ int lex()
             addChar();
             getChar();
         }
+        endFlag=0;
+        keywordFlag=0;
+        char afterEndIdent [31];
+        if(strcasecmp(lexeme,"END")==0)
+        {
+            positionFileEnd=ftell(in_fp);
+            endFlag=1;
+            getNonBlank();
+            if(charClass==LETTER)
+            {
+                lexeme[lexLen++]=' ';
+                lexeme[lexLen]=0;
 
-        int i,keywordFlag=0;
+                while(charClass==LETTER)
+                {
+                    addChar();
+                    getChar();
+                }
+            }
+            strcpy(afterEndIdent,lexeme);
+        }
+
+
+
+
+
+        int i;
         for(i=0; i<KEYWORD_LIST_SIZE; i++)
             if(strcasecmp(keywordList[i],lexeme)==0)
             {
@@ -370,12 +403,33 @@ int lex()
     } /* End of switch */
 //    if( =='\n'|| strcasecmp("C",lexeme)!=0)
     if(lexLen>31)
-    exceptionHandler(EXC_LONG_ID);
+        exceptionHandler(EXC_LONG_ID);
     if(commentFlag==0&&exception==0)
     {
-        printf("Next token is: %d, Next lexeme is %s\n",
+        if(endFlag==1 && keywordFlag==1)
+        {
+              printf("Next token is: %d, Next lexeme is %s\n",
                nextToken, lexeme);
         fprintf(tkn_fp,"(%d,%s)\n",nextToken,lexeme);
+        }
+
+
+        else if(endFlag==1 && keywordFlag==0)
+        {
+            strcpy(lexeme,"END");
+            nextToken=KEYWORD;
+
+             printf("Next token is: %d, Next lexeme is %s\n",
+               nextToken, lexeme);
+        fprintf(tkn_fp,"(%d,%s)\n",nextToken,lexeme);
+        fseek(in_fp,positionFileEnd,SEEK_SET);
+
+        }
+        else if(endFlag==0){
+          printf("Next token is: %d, Next lexeme is %s\n",
+               nextToken, lexeme);
+        fprintf(tkn_fp,"(%d,%s)\n",nextToken,lexeme);
+        }
     }
     if(commentFlag==1)
     {
