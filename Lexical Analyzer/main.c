@@ -2,8 +2,12 @@
 #include <ctype.h>
 #include <string.h>
 
-#define KEYWORD_LIST_SIZE 39
-char* keywordList[]= {"ASSIGN","BACKSPACE","BLOCK DATA","CALL","CLOSE","COMMON","CONTINUE","DATA","DIMENSION","DO","ELSE","ELSE IF","END","ENDFILE","ENDIF","ENTRY","EQUIVALENCE","EXTERNAL","FORMAT","FUNCTION","GOTO","IF","IMPLICIT","INQUIRE","INTRINSIC","OPEN","PARAMETER","PAUSE","PRINT","PROGRAM","READ","RETURN","REWIND","REWRITE","SAVE","STOP","SUBROUTINE","THEN","WRITE"};
+#define KEYWORD_LIST_SIZE 40
+char* keywordList[]= {"ASSIGN","BACKSPACE","BLOCK DATA","CALL","CLOSE","COMMON","CONTINUE",
+                      "DATA","DIMENSION","DO","ELSE","ELSE IF","END","ENDFILE","END IF","ENTRY","EQUIVALENCE",
+                      "EXTERNAL","FORMAT","FUNCTION","GOTO","IF","IMPLICIT","INQUIRE","INTRINSIC","OPEN","PARAMETER",
+                      "PAUSE","PRINT","PROGRAM","READ","RETURN","REWIND","REWRITE","SAVE","STOP","SUBROUTINE","THEN","WRITE","END DO"
+                     };
 /* Global declarations */
 /* Variables */
 int charClass;
@@ -20,7 +24,9 @@ int commentFlag=0;
 int line=1;
 int exception=0;
 int errors=0;
-//int newLineFlag;
+int endFlag=0;
+int positionFileEnd;
+int keywordFlag=0;
 
 /* Function declarations */
 void addChar();
@@ -47,10 +53,8 @@ void exceptionHandler(int);
 #define LEFT_PAREN 25
 #define RIGHT_PAREN 26
 
-
 #define STRING_LIT 27
 #define COMMA_OP 28
-#define COMPARISON_OP 29
 
 #define GT_OP 30
 #define LT_OP 31
@@ -102,6 +106,7 @@ int main()
         if(errors>0)
             printf("There are %d errors in source code, .lex file not created.\n",errors);
     }
+    getchar();
     return 0;
 }
 /*****************************************************/
@@ -137,7 +142,6 @@ int lookup(char ch)
         break;
 //    case '\'':
 //        /*String literal*/
-////        position = ftell(stw_fp);/*For backtracing*/
 //
 //        /*Read through EOF or " */
 //        addChar();
@@ -150,12 +154,12 @@ int lookup(char ch)
 //
 //        if (nextChar == '\'')/*No error Return to the startting point*/
 //        {
-////            fseek(stw_fp,position-1,SEEK_SET);
+
 //            nextToken = STRING_LIT;
 //        }
         else /*Unclosed comment exception*/
 //        {
-//            printf("Unclosed string!\n");
+
             exceptionHandler(EXC_STRING_UNCLOSED);
 //        }
 //        break;
@@ -172,7 +176,7 @@ int lookup(char ch)
         nextToken=EOF;
         break;
     default:
-        exceptionHandler(EXC_UNDEFINED_CHAR);
+        exceptionHandler(EXC_UNDEFINED_CHAR); // Undefined character exception
         break;
     }
     return nextToken;
@@ -186,8 +190,6 @@ void addChar()
         lexeme[lexLen++] = nextChar;
         lexeme[lexLen] = 0;
     }
-//    else
-//        exceptionHandler(EXC_LONG_ID);
 }
 /*****************************************************/
 /* getChar - a function to get the next character of
@@ -198,7 +200,7 @@ void getChar()
     if((previousChar=='\n'&& nextChar=='C')&& commentFlag==0)
         commentFlag=1;
     previousChar=nextChar;
-//    newLineFlag=0;
+
     if ((nextChar = getc(in_fp)) != EOF)
     {
         if (isalpha(nextChar))
@@ -213,24 +215,12 @@ void getChar()
         charClass = EOF;
     if(nextChar=='\n')
         line++;
-//    while(nextChar==' ')
-//    {
-//        nextChar=getc(in_fp);
-//        if(nextChar==EOF)
-//            break;
-//    }
-////    if(newLineFlag==1)
-////        newLineFlag=0;
-//    if(nextChar=='\n')
-//        newLineFlag=1;
 }
 /*****************************************************/
 /* getNonBlank - a function to call getChar until it
 returns a non-whitespace character */
 void getNonBlank()
 {
-//    if(nextChar=='n')
-//        newLineFlag=1;
     while (isspace(nextChar))
         getChar();
 }
@@ -252,8 +242,28 @@ int lex()
             addChar();
             getChar();
         }
+        endFlag=0;
+        keywordFlag=0;
+        char afterEndIdent [31];
+        if(strcasecmp(lexeme,"END")==0) //For End If, End Do purpose
+        {
+            positionFileEnd=ftell(in_fp); // for backtracking
+            endFlag=1;
+            getNonBlank();
+            if(charClass==LETTER)
+            {
+                lexeme[lexLen++]=' ';
+                lexeme[lexLen]=0;
 
-        int i,keywordFlag=0;
+                while(charClass==LETTER)
+                {
+                    addChar();
+                    getChar();
+                }
+            }
+            strcpy(afterEndIdent,lexeme); //Check it if is in keyword list
+        }
+        int i;
         for(i=0; i<KEYWORD_LIST_SIZE; i++)
             if(strcasecmp(keywordList[i],lexeme)==0)
             {
@@ -276,35 +286,20 @@ int lex()
             addChar();
             getChar();
         }
-        if(charClass==LETTER)
+        if(charClass==LETTER) //Identifier started with digit exception
         {
             exceptionHandler(EXC_IMPROPER_ID);
             getChar();
             break;
         }
-        if(nextChar=='.')
+        if(nextChar=='.') //Real type
         {
             nextToken=REAL_LIT;
             addChar();
             getChar();
         }
-
-
         while ((charClass == DIGIT ||nextChar=='D')||( nextChar=='E' ||(nextChar=='F' || nextChar=='G')))
         {
-//            if(nextChar=='.'&&dotFlag==0)
-//                dotFlag=1;
-//            if(( nextChar=='E' ||nextChar=='F') ||( nextChar=='G'||nextChar=='D'))
-//            {
-//                if(dotFlag==1)
-//                    nextToken=REAL_LIT;
-//                else exceptionHandler(EXC_IMPROPER_REAL_TYPE);
-//            }
-//            else exceptionHandler(EXC_IMPROPER_REAL_TYPE);
-//            if(isalpha(nextChar)&&dotFlag==0)
-//                exceptionHandler(EXC_IMPROPER_ID);
-//            addChar();
-//            getChar();
             addChar();
             getChar();
         }
@@ -330,10 +325,8 @@ int lex()
         }
         if(nextChar=='.')
         {
-//             nextToken = COMPARISON_OP;
             addChar();
-
-            getChar();
+            getChar(); //Comparison operators
             if(strcasecmp(lexeme,".gt.")==0)
                 nextToken=GT_OP;
             else if(strcasecmp(lexeme,".lt.")==0)
@@ -368,23 +361,48 @@ int lex()
         lexeme[3] = 0;
         break;
     } /* End of switch */
-//    if( =='\n'|| strcasecmp("C",lexeme)!=0)
     if(lexLen>31)
-    exceptionHandler(EXC_LONG_ID);
+        exceptionHandler(EXC_LONG_ID);
     if(commentFlag==0&&exception==0)
     {
-        printf("Next token is: %d, Next lexeme is %s\n",
-               nextToken, lexeme);
-        fprintf(tkn_fp,"(%d,%s)\n",nextToken,lexeme);
+        if(endFlag==1 && keywordFlag==1) //For End If and End Do
+        {
+            printf("Next token is: %d, Next lexeme is %s\n",
+                   nextToken, lexeme);
+            fprintf(tkn_fp,"(%d,%s)\n",nextToken,lexeme);
+        }
+        else if(endFlag==1 && keywordFlag==0) //If the string after end is not a keyword than backtrack the string after end
+        {
+            strcpy(lexeme,"END");
+            nextToken=KEYWORD;
+            printf("Next token is: %d, Next lexeme is %s\n",
+                   nextToken, lexeme);
+            fprintf(tkn_fp,"(%d,%s)\n",nextToken,lexeme);
+            fseek(in_fp,positionFileEnd,SEEK_SET);
+        }
+        else if(endFlag==0)
+        {
+            printf("Next token is: %d, Next lexeme is %s\n",
+                   nextToken, lexeme);
+            fprintf(tkn_fp,"(%d,%s)\n",nextToken,lexeme);
+        }
     }
     if(commentFlag==1)
-    {
-        while(nextChar!='\n')
-
+    { //If the line started with C skip the line
+        while(nextChar!='\n'&&nextChar!=EOF)
             nextChar=getc(in_fp);
-        nextToken=STRING_LIT;
+        if(nextChar==EOF)
+        {
+            nextToken = EOF;
+            lexeme[0] = 'E';
+            lexeme[1] = 'O';
+            lexeme[2] = 'F';
+            lexeme[3] = 0;
+            printf("Next token is: %d, Next lexeme is %s\n",
+                   nextToken, lexeme);
+            fprintf(tkn_fp,"(%d,%s)\n",nextToken,lexeme);
+        }
     }
-
     return nextToken;
 } /* End of function lex */
 void exceptionHandler(int exceptionCode)
