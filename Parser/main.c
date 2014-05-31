@@ -1,7 +1,15 @@
 #include <stdio.h>
 #include <ctype.h>
 #include <string.h>
+#define TYPE_MAX 31
+struct Terminal
+{
+    char token [TYPE_MAX];
+    char lexeme [TYPE_MAX];
+    int tokenNumber;
+    struct Terminal *sonraki;
 
+} typedef TERMINAL;
 /* Global declarations */
 /* Variables */
 int charClass;
@@ -22,13 +30,22 @@ int endFlag=0;
 int positionFileEnd;
 int keywordFlag=0;
 char outputIdentifier []= "OUTPUT";
+
 /* Function declarations */
 void addChar();
 void getChar();
 void getNonBlank();
 int lex();
 void exceptionHandler(int);
+void addToList(TERMINAL **, TERMINAL *);
+void printList(TERMINAL *);
+int lookup(char ch,TERMINAL * terminal);
+void parse();
 
+TERMINAL *list;
+TERMINAL *onceki;
+TERMINAL *sonraki;
+TERMINAL *variable;
 /* Character classes */
 #define LETTER 0
 #define DIGIT 1
@@ -85,39 +102,60 @@ int main()
         if(errors>0)
             printf("There are %d errors in source code, .lex file not created.\n",errors);
     }
+    parse();
     getchar();
     return 0;
 }
 /*****************************************************/
 /* lookup - a function to lookup operators and parentheses
 and return the token */
-int lookup(char ch)
+void parse()
+{
+    TERMINAL * gecici;
+    if(list->tokenNumber==IDENT)
+    {
+        if(list->sonraki->tokenNumber==ASSIGN_OP)
+        {
+
+        }
+    }
+    else if (list->tokenNumber==OUTPUT_IDENT){
+
+    }
+}
+int lookup(char ch,TERMINAL * terminal)
 {
     switch (ch)
     {
     case '(':
         addChar();
         nextToken = LEFT_PAREN;
+        strcpy(terminal->token,"LEFT_PAREN");
         break;
     case ')':
         addChar();
         nextToken = RIGHT_PAREN;
+        strcpy(terminal->token,"RIGHT_PAREN");
         break;
     case '+':
         addChar();
         nextToken = ADD_OP;
+        strcpy(terminal->token,"ADD_OP");
         break;
     case '-':
         addChar();
         nextToken = SUB_OP;
+        strcpy(terminal->token,"SUB_OP");
         break;
     case '*':
         addChar();
         nextToken = ASTERISK_OP;
+        strcpy(terminal->token,"ASTERISK_OP");
         break;
     case '/':
         addChar();
         nextToken = SLASH_OP;
+        strcpy(terminal->token,"SLASH_OP");
         break;
     case '"':
         /*String literal*/
@@ -140,19 +178,20 @@ int lookup(char ch)
 
             exceptionHandler(EXC_STRING_UNCLOSED);
         }
+        strcpy(terminal->token,"STRING_LIT");
         break;
-        case ':':
+    case ':':
         addChar();
         getChar();
-          if(  nextChar=='=')
+        if(  nextChar=='=')
         {
             addChar();
             nextToken=ASSIGN_OP;
-
+                strcpy(terminal->token,"ASSIGN_OP");
         }
         else
 
-        exceptionHandler(EXC_UNDEFINED_CHAR);
+            exceptionHandler(EXC_UNDEFINED_CHAR);
 
 
 
@@ -161,13 +200,15 @@ int lookup(char ch)
 
         break;
     case ';':
-    addChar();
-    nextToken=EOL;
-    break;
+        addChar();
+        nextToken=EOL;
+        strcpy(terminal->token,"EOL");
+        break;
 
     case EOF:
         addChar();
         nextToken=EOF;
+        strcpy(terminal->token,"EOF");
         break;
     default:
         exceptionHandler(EXC_UNDEFINED_CHAR); // Undefined character exception
@@ -220,6 +261,7 @@ expressions */
 int lex()
 {
     lexLen = 0;
+    TERMINAL * terminal = malloc(sizeof(TERMINAL));
     getNonBlank();
     switch (charClass)
     {
@@ -233,12 +275,14 @@ int lex()
             getChar();
         }
         nextToken=IDENT;
-break;
+        strcpy(terminal->token,"IDENT_LIT");
+        break;
         /* Parse integer literals */
     case DIGIT:
         addChar();
         getChar();
         nextToken = INT_LIT;
+        strcpy(terminal->token,"DIGIT_LIT");
         while (charClass==DIGIT)
         {
             addChar();
@@ -252,7 +296,7 @@ break;
         break;
         /* Parentheses and operators */
     case UNKNOWN:
-        lookup(nextChar);
+        lookup(nextChar,terminal);
         getChar();
 
 
@@ -264,34 +308,26 @@ break;
         lexeme[1] = 'O';
         lexeme[2] = 'F';
         lexeme[3] = 0;
+        strcpy(terminal->token,"EOF");
         break;
     } /* End of switch */
+ strcpy(terminal->lexeme,lexeme);
+ terminal->tokenNumber=nextToken;
+
+ addToList(&list,terminal);
     if(0==strcasecmp(outputIdentifier,lexeme))
-    nextToken=OUTPUT_IDENT;
+        nextToken=OUTPUT_IDENT;
     if(lexLen>31)
         exceptionHandler(EXC_LONG_ID);
-    if(exception==0){
-            printf("Next token is: %d, Next lexeme is %s\n",
-                   nextToken, lexeme);
-            fprintf(tkn_fp,"(%d,%s)\n",nextToken,lexeme);
-        }
+    if(exception==0)
+    {
+        printf("Next token is: %d, Next lexeme is %s\n",
+               nextToken, lexeme);
+        fprintf(tkn_fp,"(%d,%s)\n",nextToken,lexeme);
 
-    if(commentFlag==1)
-    { //If the line started with C skip the line
-        while(nextChar!='\n'&&nextChar!=EOF)
-            nextChar=getc(in_fp);
-        if(nextChar==EOF)
-        {
-            nextToken = EOF;
-            lexeme[0] = 'E';
-            lexeme[1] = 'O';
-            lexeme[2] = 'F';
-            lexeme[3] = 0;
-            printf("Next token is: %d, Next lexeme is %s\n",
-                   nextToken, lexeme);
-            fprintf(tkn_fp,"(%d,%s)\n",nextToken,lexeme);
-        }
+
     }
+
     return nextToken;
 } /* End of function lex */
 void exceptionHandler(int exceptionCode)
@@ -319,5 +355,41 @@ void exceptionHandler(int exceptionCode)
     case EXC_UNDEFINED_COMP_OP:
         printf("Undefined compresion operator in line: %d\n",line-1);
         break;
+    }
+}
+void addToList(TERMINAL **bas, TERMINAL *yeni)
+{
+    TERMINAL *gecici, *onceki;
+
+    if(*bas==NULL) //kuyruk bossa
+    {
+        yeni->sonraki=NULL;
+        *bas=yeni;
+    }
+    else
+    {
+        onceki=*bas;
+        gecici=(*bas)->sonraki;
+        while((gecici!=NULL)) //eklenecek uygun yer araniyor
+        {
+            onceki=gecici;
+            gecici=gecici->sonraki;
+        }
+        yeni->sonraki=gecici; //gecici NULL ise en sona, degilse onceki dugumu ile gecici dugumu arasina ekleniyor
+        onceki->sonraki=yeni;
+    }
+}
+
+void printList(TERMINAL *bas)
+{
+    TERMINAL *gecici;
+
+    gecici=bas;
+    printf("\n");
+    while(gecici!=NULL)
+    {
+        printf("\t%s \t %s\n", gecici->lexeme, gecici->token);
+
+        gecici=gecici->sonraki;
     }
 }
