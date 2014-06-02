@@ -1,3 +1,6 @@
+<<<<<<< HEAD
+(12,PROGRAM)(11,MAIN)(11,INTEGER)(11,I)(28,,)(11,I)(-1,_)
+=======
 (12,PROGRAM)
 (11,MAIN)
 (11,INTEGER)
@@ -95,3 +98,4 @@
 (12,END IF)
 (12,END)
 (-1,EOF)
+>>>>>>> fb951257cf55acfb7e19ef8f2b6ae85308bbe314

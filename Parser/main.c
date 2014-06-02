@@ -1,13 +1,15 @@
 #include <stdio.h>
 #include <ctype.h>
 #include <string.h>
+#define TYPE_MAX 31
+struct Terminal
+{
+    char token [TYPE_MAX];
+    char lexeme [TYPE_MAX];
+    int tokenNumber;
+    struct Terminal *sonraki;
 
-#define KEYWORD_LIST_SIZE 40
-char* keywordList[]= {"ASSIGN","BACKSPACE","BLOCK DATA","CALL","CLOSE","COMMON","CONTINUE",
-                      "DATA","DIMENSION","DO","ELSE","ELSE IF","END","ENDFILE","END IF","ENTRY","EQUIVALENCE",
-                      "EXTERNAL","FORMAT","FUNCTION","GOTO","IF","IMPLICIT","INQUIRE","INTRINSIC","OPEN","PARAMETER",
-                      "PAUSE","PRINT","PROGRAM","READ","RETURN","REWIND","REWRITE","SAVE","STOP","SUBROUTINE","THEN","WRITE","END DO"
-                     };
+} typedef TERMINAL;
 /* Global declarations */
 /* Variables */
 int charClass;
@@ -27,6 +29,7 @@ int errors=0;
 int endFlag=0;
 int positionFileEnd;
 int keywordFlag=0;
+char outputIdentifier []= "OUTPUT";
 
 /* Function declarations */
 void addChar();
@@ -34,17 +37,25 @@ void getChar();
 void getNonBlank();
 int lex();
 void exceptionHandler(int);
+void addToList(TERMINAL **, TERMINAL *);
+void printList(TERMINAL *);
+int lookup(char ch,TERMINAL * terminal);
+void parse();
 
+TERMINAL *list;
+TERMINAL *onceki;
+TERMINAL *sonraki;
+TERMINAL *variable;
 /* Character classes */
 #define LETTER 0
 #define DIGIT 1
-#define LOGICAL_EXP 2
 #define UNKNOWN 99
 /* Token codes */
 
 #define INT_LIT 10
 #define IDENT 11
-#define KEYWORD 12
+#define OUTPUT_IDENT 12
+
 #define ASSIGN_OP 20
 #define ADD_OP 21
 #define SUB_OP 22
@@ -54,23 +65,8 @@ void exceptionHandler(int);
 #define RIGHT_PAREN 26
 
 #define STRING_LIT 27
-#define COMMA_OP 28
+#define EOL 28
 
-#define GT_OP 30
-#define LT_OP 31
-#define GE_OP 32
-#define LE_OP 33
-#define EQ_OP 34
-#define NE_OP 35
-
-#define POW_OP 36
-#define REAL_LIT 37
-
-#define NOT_OP 38
-#define AND_OP 39
-#define OR_OP 40
-#define EQV_OP 41
-#define NEQV_OP 42
 
 #define EXC_STRING_UNCLOSED 1000
 #define EXC_UNDEFINED_CHAR 1001
@@ -106,74 +102,113 @@ int main()
         if(errors>0)
             printf("There are %d errors in source code, .lex file not created.\n",errors);
     }
+    parse();
     getchar();
     return 0;
 }
 /*****************************************************/
 /* lookup - a function to lookup operators and parentheses
 and return the token */
-int lookup(char ch)
+void parse()
+{
+    TERMINAL * gecici;
+    if(list->tokenNumber==IDENT)
+    {
+        if(list->sonraki->tokenNumber==ASSIGN_OP)
+        {
+
+        }
+    }
+    else if (list->tokenNumber==OUTPUT_IDENT){
+
+    }
+}
+int lookup(char ch,TERMINAL * terminal)
 {
     switch (ch)
     {
     case '(':
         addChar();
         nextToken = LEFT_PAREN;
+        strcpy(terminal->token,"LEFT_PAREN");
         break;
     case ')':
         addChar();
         nextToken = RIGHT_PAREN;
+        strcpy(terminal->token,"RIGHT_PAREN");
         break;
     case '+':
         addChar();
         nextToken = ADD_OP;
+        strcpy(terminal->token,"ADD_OP");
         break;
     case '-':
         addChar();
         nextToken = SUB_OP;
+        strcpy(terminal->token,"SUB_OP");
         break;
     case '*':
         addChar();
         nextToken = ASTERISK_OP;
+        strcpy(terminal->token,"ASTERISK_OP");
         break;
     case '/':
         addChar();
         nextToken = SLASH_OP;
+        strcpy(terminal->token,"SLASH_OP");
         break;
-//    case '\'':
-//        /*String literal*/
-//
-//        /*Read through EOF or " */
-//        addChar();
-//        do
-//        {
-//            getChar();
-//            addChar();
-//        }
-        while((nextChar!= EOF && nextChar != '\'')&& nextChar!='\n');
-//
-//        if (nextChar == '\'')/*No error Return to the startting point*/
-//        {
+    case '"':
+        /*String literal*/
 
-//            nextToken = STRING_LIT;
-//        }
+        /*Read through EOF or " */
+        addChar();
+        do
+        {
+            getChar();
+            addChar();
+        }
+        while((nextChar!= EOF && nextChar != '"')&& nextChar!=';');
+
+        if (nextChar == '"')/*No error Return to the startting point*/
+        {
+            nextToken = STRING_LIT;
+        }
         else /*Unclosed comment exception*/
-//        {
+        {
 
             exceptionHandler(EXC_STRING_UNCLOSED);
-//        }
-//        break;
-    case ',':
-        addChar();
-        nextToken = COMMA_OP;
+        }
+        strcpy(terminal->token,"STRING_LIT");
         break;
-    case '=':
+    case ':':
         addChar();
-        nextToken=ASSIGN_OP;
+        getChar();
+        if(  nextChar=='=')
+        {
+            addChar();
+            nextToken=ASSIGN_OP;
+                strcpy(terminal->token,"ASSIGN_OP");
+        }
+        else
+
+            exceptionHandler(EXC_UNDEFINED_CHAR);
+
+
+
+
+
+
         break;
+    case ';':
+        addChar();
+        nextToken=EOL;
+        strcpy(terminal->token,"EOL");
+        break;
+
     case EOF:
         addChar();
         nextToken=EOF;
+        strcpy(terminal->token,"EOF");
         break;
     default:
         exceptionHandler(EXC_UNDEFINED_CHAR); // Undefined character exception
@@ -197,9 +232,7 @@ input and determine its character class */
 void getChar()
 {
 
-    if((previousChar=='\n'&& nextChar=='C')&& commentFlag==0)
-        commentFlag=1;
-    previousChar=nextChar;
+
 
     if ((nextChar = getc(in_fp)) != EOF)
     {
@@ -207,8 +240,6 @@ void getChar()
             charClass = LETTER;
         else if (isdigit(nextChar))
             charClass = DIGIT;
-        else if(nextChar=='.')
-            charClass=LOGICAL_EXP;
         else charClass = UNKNOWN;
     }
     else
@@ -230,6 +261,7 @@ expressions */
 int lex()
 {
     lexLen = 0;
+    TERMINAL * terminal = malloc(sizeof(TERMINAL));
     getNonBlank();
     switch (charClass)
     {
@@ -242,45 +274,15 @@ int lex()
             addChar();
             getChar();
         }
-        endFlag=0;
-        keywordFlag=0;
-        char afterEndIdent [31];
-        if(strcasecmp(lexeme,"END")==0) //For End If, End Do purpose
-        {
-            positionFileEnd=ftell(in_fp); // for backtracking
-            endFlag=1;
-            getNonBlank();
-            if(charClass==LETTER)
-            {
-                lexeme[lexLen++]=' ';
-                lexeme[lexLen]=0;
-
-                while(charClass==LETTER)
-                {
-                    addChar();
-                    getChar();
-                }
-            }
-            strcpy(afterEndIdent,lexeme); //Check it if is in keyword list
-        }
-        int i;
-        for(i=0; i<KEYWORD_LIST_SIZE; i++)
-            if(strcasecmp(keywordList[i],lexeme)==0)
-            {
-                keywordFlag=1;
-                break;
-            }
-        if(keywordFlag==1)
-            nextToken = KEYWORD;
-        else
-            nextToken = IDENT;
+        nextToken=IDENT;
+        strcpy(terminal->token,"IDENT_LIT");
         break;
         /* Parse integer literals */
     case DIGIT:
         addChar();
         getChar();
         nextToken = INT_LIT;
-        int dotFlag=0;
+        strcpy(terminal->token,"DIGIT_LIT");
         while (charClass==DIGIT)
         {
             addChar();
@@ -290,67 +292,14 @@ int lex()
         {
             exceptionHandler(EXC_IMPROPER_ID);
             getChar();
-            break;
-        }
-        if(nextChar=='.') //Real type
-        {
-            nextToken=REAL_LIT;
-            addChar();
-            getChar();
-        }
-        while ((charClass == DIGIT ||nextChar=='D')||( nextChar=='E' ||(nextChar=='F' || nextChar=='G')))
-        {
-            addChar();
-            getChar();
         }
         break;
         /* Parentheses and operators */
     case UNKNOWN:
-        lookup(nextChar);
+        lookup(nextChar,terminal);
         getChar();
-        if(previousChar=='*' && nextChar=='*')
-        {
-            addChar();
-            nextToken=POW_OP;
-            getChar();
-        }
-        break;
-    case LOGICAL_EXP:
-        addChar();
-        getChar();
-        while (charClass == LETTER )
-        {
-            addChar();
-            getChar();
-        }
-        if(nextChar=='.')
-        {
-            addChar();
-            getChar(); //Comparison operators
-            if(strcasecmp(lexeme,".gt.")==0)
-                nextToken=GT_OP;
-            else if(strcasecmp(lexeme,".lt.")==0)
-                nextToken=LT_OP;
-            else if(strcasecmp(lexeme,".ge.")==0)
-                nextToken=GE_OP;
-            else if(strcasecmp(lexeme,".le.")==0)
-                nextToken=LE_OP;
-            else if(strcasecmp(lexeme,".eq.")==0)
-                nextToken=EQ_OP;
-            else if(strcasecmp(lexeme,".ne.")==0)
-                nextToken=NE_OP;
-            else if(strcasecmp(lexeme,".not.")==0)
-                nextToken=NOT_OP;
-            else if(strcasecmp(lexeme,".and.")==0)
-                nextToken=AND_OP;
-            else if(strcasecmp(lexeme,".or.")==0)
-                nextToken=OR_OP;
-            else if(strcasecmp(lexeme,".eqv.")==0)
-                nextToken=EQV_OP;
-            else if(strcasecmp(lexeme,".neqv.")==0)
-                nextToken=NEQV_OP;
-            else exceptionHandler(EXC_UNDEFINED_COMP_OP);
-        }
+
+
         break;
         /* EOF */
     case EOF:
@@ -359,50 +308,26 @@ int lex()
         lexeme[1] = 'O';
         lexeme[2] = 'F';
         lexeme[3] = 0;
+        strcpy(terminal->token,"EOF");
         break;
     } /* End of switch */
+ strcpy(terminal->lexeme,lexeme);
+ terminal->tokenNumber=nextToken;
+
+ addToList(&list,terminal);
+    if(0==strcasecmp(outputIdentifier,lexeme))
+        nextToken=OUTPUT_IDENT;
     if(lexLen>31)
         exceptionHandler(EXC_LONG_ID);
-    if(commentFlag==0&&exception==0)
+    if(exception==0)
     {
-        if(endFlag==1 && keywordFlag==1) //For End If and End Do
-        {
-            printf("Next token is: %d, Next lexeme is %s\n",
-                   nextToken, lexeme);
-            fprintf(tkn_fp,"(%d,%s)\n",nextToken,lexeme);
-        }
-        else if(endFlag==1 && keywordFlag==0) //If the string after end is not a keyword than backtrack the string after end
-        {
-            strcpy(lexeme,"END");
-            nextToken=KEYWORD;
-            printf("Next token is: %d, Next lexeme is %s\n",
-                   nextToken, lexeme);
-            fprintf(tkn_fp,"(%d,%s)\n",nextToken,lexeme);
-            fseek(in_fp,positionFileEnd,SEEK_SET);
-        }
-        else if(endFlag==0)
-        {
-            printf("Next token is: %d, Next lexeme is %s\n",
-                   nextToken, lexeme);
-            fprintf(tkn_fp,"(%d,%s)\n",nextToken,lexeme);
-        }
+        printf("Next token is: %d, Next lexeme is %s\n",
+               nextToken, lexeme);
+        fprintf(tkn_fp,"(%d,%s)\n",nextToken,lexeme);
+
+
     }
-    if(commentFlag==1)
-    { //If the line started with C skip the line
-        while(nextChar!='\n'&&nextChar!=EOF)
-            nextChar=getc(in_fp);
-        if(nextChar==EOF)
-        {
-            nextToken = EOF;
-            lexeme[0] = 'E';
-            lexeme[1] = 'O';
-            lexeme[2] = 'F';
-            lexeme[3] = 0;
-            printf("Next token is: %d, Next lexeme is %s\n",
-                   nextToken, lexeme);
-            fprintf(tkn_fp,"(%d,%s)\n",nextToken,lexeme);
-        }
-    }
+
     return nextToken;
 } /* End of function lex */
 void exceptionHandler(int exceptionCode)
@@ -430,5 +355,41 @@ void exceptionHandler(int exceptionCode)
     case EXC_UNDEFINED_COMP_OP:
         printf("Undefined compresion operator in line: %d\n",line-1);
         break;
+    }
+}
+void addToList(TERMINAL **bas, TERMINAL *yeni)
+{
+    TERMINAL *gecici, *onceki;
+
+    if(*bas==NULL) //kuyruk bossa
+    {
+        yeni->sonraki=NULL;
+        *bas=yeni;
+    }
+    else
+    {
+        onceki=*bas;
+        gecici=(*bas)->sonraki;
+        while((gecici!=NULL)) //eklenecek uygun yer araniyor
+        {
+            onceki=gecici;
+            gecici=gecici->sonraki;
+        }
+        yeni->sonraki=gecici; //gecici NULL ise en sona, degilse onceki dugumu ile gecici dugumu arasina ekleniyor
+        onceki->sonraki=yeni;
+    }
+}
+
+void printList(TERMINAL *bas)
+{
+    TERMINAL *gecici;
+
+    gecici=bas;
+    printf("\n");
+    while(gecici!=NULL)
+    {
+        printf("\t%s \t %s\n", gecici->lexeme, gecici->token);
+
+        gecici=gecici->sonraki;
     }
 }

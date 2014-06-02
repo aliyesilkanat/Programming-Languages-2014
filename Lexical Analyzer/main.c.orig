@@ -140,8 +140,10 @@ int lookup(char ch)
         addChar();
         nextToken = SLASH_OP;
         break;
+<<<<<<< HEAD
 //    case '\'':
 //        /*String literal*/
+////        position = ftell(stw_fp);/*For backtracing*/
 //
 //        /*Read through EOF or " */
 //        addChar();
@@ -154,12 +156,34 @@ int lookup(char ch)
 //
 //        if (nextChar == '\'')/*No error Return to the startting point*/
 //        {
-
+////            fseek(stw_fp,position-1,SEEK_SET);
 //            nextToken = STRING_LIT;
 //        }
         else /*Unclosed comment exception*/
 //        {
+//            printf("Unclosed string!\n");
+=======
+    case '\'':
+        /*String literal*/
 
+        /*Read through EOF or " */
+        addChar();
+        do
+        {
+            getChar();
+            addChar();
+        }
+        while((nextChar!= EOF && nextChar != '\'')&& nextChar!='\n');
+
+        if (nextChar == '\'')/*No error Return to the startting point*/
+        {
+
+            nextToken = STRING_LIT;
+        }
+        else /*Unclosed comment exception*/
+        {
+
+>>>>>>> fb951257cf55acfb7e19ef8f2b6ae85308bbe314
             exceptionHandler(EXC_STRING_UNCLOSED);
 //        }
 //        break;
