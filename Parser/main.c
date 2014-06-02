@@ -10,6 +10,20 @@ struct Terminal
     struct Terminal *sonraki;
 
 } typedef TERMINAL;
+struct TreeNode
+{
+    TERMINAL* term;
+    struct TreeNode* rightNode;
+    struct TreeNode* leftNode;
+} typedef TREENODE;
+struct VariableNode
+{
+    char identifierName[TYPE_MAX];
+    int value;
+    struct VariableNode* sonraki;
+
+}
+typedef VARIABLENODE;
 /* Global declarations */
 /* Variables */
 int charClass;
@@ -41,7 +55,7 @@ void addToList(TERMINAL **, TERMINAL *);
 void printList(TERMINAL *);
 int lookup(char ch,TERMINAL * terminal);
 void parse();
-
+TREENODE * tree;
 TERMINAL *list;
 TERMINAL *onceki;
 TERMINAL *sonraki;
@@ -111,15 +125,54 @@ int main()
 and return the token */
 void parse()
 {
-    TERMINAL * gecici;
-    if(list->tokenNumber==IDENT)
+    tree =malloc(sizeof(TREENODE));
+    TERMINAL * gecici=list;
+    TREENODE *geciciTree=tree;
+    while(gecici->tokenNumber!=EOF)
     {
-        if(list->sonraki->tokenNumber==ASSIGN_OP)
+
+
+        if(gecici->tokenNumber==IDENT)
+        {
+            geciciTree->leftNode=malloc(sizeof(TREENODE));
+            geciciTree->leftNode->term=gecici;
+
+
+            if(gecici->sonraki->tokenNumber==ASSIGN_OP)
+            {
+                geciciTree->term=gecici->sonraki;
+                                 geciciTree->rightNode=malloc(sizeof(TREENODE));
+                gecici=gecici->sonraki->sonraki;
+                while(gecici->tokenNumber!=EOL)
+                {
+                    geciciTree=geciciTree->rightNode;
+                    geciciTree->leftNode=malloc(sizeof(TREENODE));
+                    geciciTree->leftNode->term=gecici;
+                    geciciTree->term=gecici->sonraki;
+                                gecici->sonraki->sonraki=gecici;
+                                 geciciTree->rightNode=malloc(sizeof(TREENODE));
+                }
+            }
+        }
+
+        else if (gecici->tokenNumber==OUTPUT_IDENT)
         {
 
-        }
-    }
-    else if (list->tokenNumber==OUTPUT_IDENT){
+  geciciTree->leftNode=malloc(sizeof(TREENODE));
+ geciciTree->leftNode->term=gecici;
+ geciciTree->term=gecici->sonraki;
+                                 geciciTree->rightNode=malloc(sizeof(TREENODE));
+                gecici=gecici->sonraki->sonraki;
+                while(gecici->tokenNumber!=EOL)
+                {
+                    geciciTree=geciciTree->rightNode;
+                    geciciTree->leftNode=malloc(sizeof(TREENODE));
+                    geciciTree->leftNode->term=gecici;
+                    geciciTree->term=gecici->sonraki;
+                                gecici->sonraki->sonraki=gecici;
+                                 geciciTree->rightNode=malloc(sizeof(TREENODE));
+
+        }}
 
     }
 }
@@ -187,7 +240,7 @@ int lookup(char ch,TERMINAL * terminal)
         {
             addChar();
             nextToken=ASSIGN_OP;
-                strcpy(terminal->token,"ASSIGN_OP");
+            strcpy(terminal->token,"ASSIGN_OP");
         }
         else
 
@@ -311,10 +364,10 @@ int lex()
         strcpy(terminal->token,"EOF");
         break;
     } /* End of switch */
- strcpy(terminal->lexeme,lexeme);
- terminal->tokenNumber=nextToken;
+    strcpy(terminal->lexeme,lexeme);
+    terminal->tokenNumber=nextToken;
 
- addToList(&list,terminal);
+    addToList(&list,terminal);
     if(0==strcasecmp(outputIdentifier,lexeme))
         nextToken=OUTPUT_IDENT;
     if(lexLen>31)
@@ -379,7 +432,28 @@ void addToList(TERMINAL **bas, TERMINAL *yeni)
         onceki->sonraki=yeni;
     }
 }
+void addToVariableList(VARIABLENODE **bas, VARIABLENODE *yeni)
+{
+    VARIABLENODE *gecici, *onceki;
 
+    if(*bas==NULL) //kuyruk bossa
+    {
+        yeni->sonraki=NULL;
+        *bas=yeni;
+    }
+    else
+    {
+        onceki=*bas;
+        gecici=(*bas)->sonraki;
+        while((gecici!=NULL)) //eklenecek uygun yer araniyor
+        {
+            onceki=gecici;
+            gecici=gecici->sonraki;
+        }
+        yeni->sonraki=gecici; //gecici NULL ise en sona, degilse onceki dugumu ile gecici dugumu arasina ekleniyor
+        onceki->sonraki=yeni;
+    }
+}
 void printList(TERMINAL *bas)
 {
     TERMINAL *gecici;
