@@ -35,7 +35,7 @@ int nextToken;
 FILE *in_fp, *fopen();
 FILE *tkn_fp;
 char previousChar='\n';
-
+char * expressionToParse;
 int commentFlag=0;
 int line=1;
 int exception=0;
@@ -44,7 +44,7 @@ int endFlag=0;
 int positionFileEnd;
 int keywordFlag=0;
 char outputIdentifier []= "OUTPUT";
-
+int degiskenListedeVar=0;
 /* Function declarations */
 void addChar();
 void getChar();
@@ -55,11 +55,16 @@ void addToList(TERMINAL **, TERMINAL *);
 void printList(TERMINAL *);
 int lookup(char ch,TERMINAL * terminal);
 void parse();
+void execute();
+int expression();
 TREENODE * tree;
 TERMINAL *list;
 TERMINAL *onceki;
 TERMINAL *sonraki;
 TERMINAL *variable;
+VARIABLENODE *variableList;
+int getIdentifierValue(VARIABLENODE *,char*,int*);
+void addToVariableList(VARIABLENODE **bas, VARIABLENODE *yeni);
 /* Character classes */
 #define LETTER 0
 #define DIGIT 1
@@ -116,19 +121,229 @@ int main()
         if(errors>0)
             printf("There are %d errors in source code, .lex file not created.\n",errors);
     }
+    printList(list);
     parse();
+    execute();
     getchar();
+
     return 0;
+}
+int getIdentifierValue(VARIABLENODE *bas,char* lexeme,int *bulundu)
+{
+    VARIABLENODE *gecici=bas;
+
+    while(gecici!=NULL)
+    {
+        if(strcasecmp(gecici->identifierName,lexeme)==0)
+        {
+            *bulundu=1;
+            return gecici->value;
+        }
+        gecici=gecici->sonraki;
+    }
+    *bulundu=0;
+    return 0;
+}
+void execute()
+{
+    VARIABLENODE* variable;
+    TREENODE * gecici=tree;
+    char mathExp[100]="\0";
+    char degiskenDegeriStr[20]="\0";
+    static int solSag=0;
+    while(gecici->term->tokenNumber!=EOF&&gecici->leftNode->term->tokenNumber!=EOF)
+    {
+
+
+        if(gecici->leftNode->term->tokenNumber==IDENT)
+        {
+            variable=malloc(sizeof(VARIABLENODE));
+            strcpy(variable->identifierName,gecici->leftNode->term->lexeme);
+
+            gecici=gecici->rightNode;
+            while(gecici->term->tokenNumber!=EOL)
+            {
+                if(solSag==0)
+                {
+                    solSag=1;
+                    if(gecici->leftNode->term->tokenNumber==IDENT)
+                    {
+
+                        int degiskenDegeri=getIdentifierValue(variableList,gecici->leftNode->term->lexeme,&degiskenListedeVar);
+
+                        sprintf(degiskenDegeriStr,"%d",degiskenDegeri);
+                        strcat(mathExp,degiskenDegeriStr);
+                    }
+                    else if(gecici->leftNode->term->tokenNumber!=EOL)
+                        strcat(mathExp,gecici->leftNode->term->lexeme);
+                    else if(gecici->leftNode->term->tokenNumber==EOL)
+                        continue;
+
+                }
+                else
+                {
+                    solSag=0;
+                    if(gecici->term->tokenNumber==IDENT)
+                    {
+
+                        int degiskenDegeri=getIdentifierValue(variableList,gecici->term->lexeme,&degiskenListedeVar);
+
+                        sprintf(degiskenDegeriStr,"%d",degiskenDegeri);
+                        strcat(mathExp,degiskenDegeriStr);
+                    }
+                    else if(gecici->term->tokenNumber!=EOL)
+                    {
+                        strcat(mathExp,gecici->term->lexeme);
+                        gecici=gecici->rightNode;
+                        solSag=1;
+
+                        if(gecici->leftNode->term->tokenNumber!=EOL)
+                            strcat(mathExp,gecici->leftNode->term->lexeme);
+                        continue;
+                    }
+                    else if(gecici->term->tokenNumber==EOL)
+                    {
+                        gecici=gecici->rightNode;
+                        continue;
+                    }
+                    gecici=gecici->rightNode;
+
+                }
+            }
+            expressionToParse=mathExp;
+            variable->value=expression();
+            addToVariableList(&variableList,variable);
+        }
+
+//
+//
+//
+//
+//        if(gecici->leftNode->term->tokenNumber==IDENT)
+//        {
+//
+//
+//            variable=malloc(sizeof(VARIABLENODE));
+//            strcpy(variable->identifierName,gecici->leftNode->term->lexeme);
+//
+//            gecici=gecici->rightNode;
+//            while(gecici->term->tokenNumber!=EOL)
+//            {
+//                if(gecici->leftNode->term->tokenNumber==IDENT)
+//                {
+//
+//                    int degiskenDegeri=getIdentifierValue(variableList,gecici->leftNode->term->lexeme,&degiskenListedeVar);
+//
+//                    sprintf(degiskenDegeriStr,"%d",degiskenDegeri);
+//                    strcat(mathExp,degiskenDegeriStr);
+//                }
+//                else if(gecici->leftNode->term->tokenNumber!=EOL)
+//                    strcat(mathExp,gecici->leftNode->term->lexeme);
+//
+//                if(gecici->term->tokenNumber==IDENT)
+//                {
+//                    int listedeVar;
+//                    int degiskenDegeri=getIdentifierValue(variableList,gecici->term->lexeme,&listedeVar);
+//
+//                    sprintf(degiskenDegeriStr,"%d",degiskenDegeri);
+//                    strcat(mathExp,degiskenDegeriStr);
+//                }
+//                else  if(gecici->term->tokenNumber!=EOL)
+//
+//
+//                    strcat(mathExp,gecici->term->lexeme);
+//                gecici=gecici->rightNode;
+//            }
+//            expressionToParse=mathExp;
+//            variable->value=expression();
+//            addToVariableList(&variableList,variable);
+//        }
+        else if(gecici->leftNode->term->tokenNumber==OUTPUT_IDENT)
+        {
+
+            if(gecici->term->tokenNumber==IDENT)
+                printf(" %d ",getIdentifierValue(variableList,gecici->term->lexeme,&degiskenListedeVar));
+            else if(gecici->term->tokenNumber==STRING_LIT)
+                printf(" %s ",variableList,gecici->term->lexeme);
+            gecici=gecici->rightNode;
+
+
+            while(1==1)
+            {
+                if(gecici->leftNode->term->tokenNumber!=EOF&& gecici->leftNode->term->tokenNumber!=EOL)
+                {
+
+                    if(gecici->leftNode->term->tokenNumber==IDENT)
+                        printf(" %d ",getIdentifierValue(variableList,gecici->leftNode->term->lexeme,&degiskenListedeVar));
+                    else if(gecici->leftNode->term->tokenNumber==STRING_LIT)
+                        printf(" %s ",gecici->leftNode->term->lexeme);
+
+
+
+                }
+                else break;
+
+                if(gecici->term->tokenNumber!=EOF&& gecici->term->tokenNumber!=EOL)
+                {
+
+                    if(gecici->term->tokenNumber==IDENT)
+                        printf(" %d ",getIdentifierValue(variableList,gecici->term->lexeme,&degiskenListedeVar));
+                    else if(gecici->term->tokenNumber==STRING_LIT)
+                        printf(" %s ",gecici->term->lexeme);
+                }
+                else break;
+
+                gecici=gecici->rightNode;
+
+            }
+
+
+
+
+
+            while(gecici->leftNode->term->tokenNumber==EOL)
+            {
+                if(gecici->leftNode->term->tokenNumber==IDENT)
+                {
+                    int listedeVar;
+                    int degiskenDegeri=getIdentifierValue(variableList,gecici->leftNode->term->lexeme,&listedeVar);
+
+                    sprintf(degiskenDegeriStr,"%d",degiskenDegeri);
+                    strcat(mathExp,degiskenDegeriStr);
+                }
+                else
+                    strcat(mathExp,gecici->leftNode->term->lexeme);
+
+                if(gecici->term->tokenNumber==IDENT)
+                {
+                    int listedeVar;
+                    int degiskenDegeri=getIdentifierValue(variableList,gecici->term->lexeme,&listedeVar);
+
+                    sprintf(degiskenDegeriStr,"%d",degiskenDegeri);
+                    strcat(mathExp,degiskenDegeriStr);
+                }
+                else
+
+
+                    strcat(mathExp,gecici->term->lexeme);
+                gecici=gecici->rightNode;
+            }
+        }
+    gecici=gecici->rightNode;
+    }
+
+
 }
 /*****************************************************/
 /* lookup - a function to lookup operators and parentheses
 and return the token */
 void parse()
 {
+    static int leftRightFlag=0;
     tree =malloc(sizeof(TREENODE));
     TERMINAL * gecici=list;
     TREENODE *geciciTree=tree;
-    while(gecici->tokenNumber!=EOF)
+    while(gecici->tokenNumber!=EOF&&gecici->sonraki->tokenNumber!=EOF)
     {
 
 
@@ -140,41 +355,88 @@ void parse()
 
             if(gecici->sonraki->tokenNumber==ASSIGN_OP)
             {
+
+
                 geciciTree->term=gecici->sonraki;
-                                 geciciTree->rightNode=malloc(sizeof(TREENODE));
+                geciciTree->rightNode=malloc(sizeof(TREENODE));
                 gecici=gecici->sonraki->sonraki;
+                geciciTree=geciciTree->rightNode;
+                geciciTree->leftNode=malloc(sizeof(TREENODE));
                 while(gecici->tokenNumber!=EOL)
                 {
-                    geciciTree=geciciTree->rightNode;
-                    geciciTree->leftNode=malloc(sizeof(TREENODE));
-                    geciciTree->leftNode->term=gecici;
-                    geciciTree->term=gecici->sonraki;
-                                gecici->sonraki->sonraki=gecici;
-                                 geciciTree->rightNode=malloc(sizeof(TREENODE));
+                    if(leftRightFlag==0)
+                    {
+                        geciciTree->leftNode->term=gecici;
+                        gecici=gecici->sonraki;
+                        leftRightFlag=1;
+                        geciciTree->rightNode=malloc(sizeof(TREENODE));
+                    }
+                    else
+                    {
+                        geciciTree->term=gecici;
+                        gecici=gecici->sonraki;
+
+                        geciciTree=geciciTree->rightNode;
+                        leftRightFlag=0;
+                        geciciTree->leftNode=malloc(sizeof(TREENODE));
+                    }
                 }
+                geciciTree->term=gecici;
+                geciciTree=geciciTree->rightNode;
+                gecici=gecici->sonraki;
+                if(leftRightFlag==1)
+                    leftRightFlag=0;
+
+
+//
+//                while(gecici->sonraki->tokenNumber!=EOL)
+//                {
+//                    geciciTree=geciciTree->rightNode;
+//                    geciciTree->leftNode=malloc(sizeof(TREENODE));
+//                    geciciTree->leftNode->term=gecici;
+//                    geciciTree->term=gecici->sonraki;
+//                    gecici=gecici->sonraki->sonraki;
+//                    geciciTree->rightNode=malloc(sizeof(TREENODE));
+//                }
+//                geciciTree->leftNode=malloc(sizeof(TREENODE));
+//                geciciTree->leftNode->term=gecici;
             }
         }
 
         else if (gecici->tokenNumber==OUTPUT_IDENT)
         {
 
-  geciciTree->leftNode=malloc(sizeof(TREENODE));
- geciciTree->leftNode->term=gecici;
- geciciTree->term=gecici->sonraki;
-                                 geciciTree->rightNode=malloc(sizeof(TREENODE));
-                gecici=gecici->sonraki->sonraki;
-                while(gecici->tokenNumber!=EOL)
+            geciciTree->leftNode=malloc(sizeof(TREENODE));
+            while(gecici->tokenNumber!=EOL)
+            {
+                if(leftRightFlag==0)
                 {
-                    geciciTree=geciciTree->rightNode;
-                    geciciTree->leftNode=malloc(sizeof(TREENODE));
                     geciciTree->leftNode->term=gecici;
-                    geciciTree->term=gecici->sonraki;
-                                gecici->sonraki->sonraki=gecici;
-                                 geciciTree->rightNode=malloc(sizeof(TREENODE));
+                    gecici=gecici->sonraki;
+                    leftRightFlag=1;
+                    geciciTree->rightNode=malloc(sizeof(TREENODE));
+                }
+                else
+                {
+                    geciciTree->term=gecici;
+                    gecici=gecici->sonraki;
 
-        }}
+                    geciciTree=geciciTree->rightNode;
+                    leftRightFlag=0;
+                    geciciTree->leftNode=malloc(sizeof(TREENODE));
+                }
+            }
+            geciciTree->term=gecici;
+            geciciTree->rightNode=malloc(sizeof(TREENODE));
+            geciciTree=geciciTree->rightNode;
+            gecici=gecici->sonraki;
+
+
+        }
 
     }
+    geciciTree->leftNode=malloc(sizeof(TREENODE));
+    geciciTree->leftNode->term=gecici;
 }
 int lookup(char ch,TERMINAL * terminal)
 {
@@ -365,11 +627,17 @@ int lex()
         break;
     } /* End of switch */
     strcpy(terminal->lexeme,lexeme);
-    terminal->tokenNumber=nextToken;
 
-    addToList(&list,terminal);
+
+
     if(0==strcasecmp(outputIdentifier,lexeme))
+    {
+
         nextToken=OUTPUT_IDENT;
+        strcpy( terminal->token,outputIdentifier);
+    }
+    terminal->tokenNumber=nextToken;
+    addToList(&list,terminal);
     if(lexLen>31)
         exceptionHandler(EXC_LONG_ID);
     if(exception==0)
@@ -380,6 +648,7 @@ int lex()
 
 
     }
+
 
     return nextToken;
 } /* End of function lex */
@@ -467,3 +736,69 @@ void printList(TERMINAL *bas)
         gecici=gecici->sonraki;
     }
 }
+char * expressionToParse;
+
+char peek()
+{
+    return *expressionToParse;
+}
+
+char get()
+{
+    return *expressionToParse++;
+}
+
+
+
+int number()
+{
+    int result = get() - '0';
+    while (peek() >= '0' && peek() <= '9')
+    {
+        result = 10*result + get() - '0';
+    }
+    return result;
+}
+
+int factor()
+{
+    if (peek() >= '0' && peek() <= '9')
+        return number();
+    else if (peek() == '(')
+    {
+        get(); // '('
+        int result = expression();
+        get(); // ')'
+        return result;
+    }
+    else if (peek() == '-')
+    {
+        get();
+        return -expression();
+    }
+    return 0; // error
+}
+
+int term()
+{
+    int result = factor();
+    while (peek() == '*' || peek() == '/')
+        if (get() == '*')
+            result *= factor();
+        else
+            result /= factor();
+    return result;
+}
+
+int expression()
+{
+    int result = term();
+    while (peek() == '+' || peek() == '-')
+        if (get() == '+')
+            result += term();
+        else
+            result -= term();
+    return result;
+}
+
+
